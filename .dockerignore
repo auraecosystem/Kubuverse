@@ -1,11 +1,14 @@
-# Keep the backend build context small and exclude all unrelated repo assets.
+# Restrict build context to the files used by backend/Dockerfile.
 **
 !requirements.txt
 !backend/
+backend/*
 !backend/main.py
 !routes/
+routes/*
 !routes/analyze.py
 !routes/chat.py
 !services/
+services/*
 !services/analyzer.py
 !services/llm_chat.py
