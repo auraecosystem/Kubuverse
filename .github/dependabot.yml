@@ -5,7 +5,17 @@
 
 version: 2
 updates:
-  - package-ecosystem: "/" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  - package-ecosystem: "docker"
+    directory: "/" # Change if your Dockerfile is in a subfolder like "/stella"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "maven" # Or "gradle" if using Gradle
+    directory: "/" # Change to the folder containing pom.xml or build.gradle
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "pip"
+    directory: "/" # Change to the folder containing requirements.txt or pyproject.toml
     schedule:
       interval: "weekly"
