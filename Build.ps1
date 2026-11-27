@@ -1,6 +1,5 @@
 # Debug
 flutter build windows --debug
-
 # Release
 flutter build windows --release
 
