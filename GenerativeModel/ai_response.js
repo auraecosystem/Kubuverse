@@ -11,7 +11,7 @@ async function interactWithChatGPT(response) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization':'Bearer ${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}`,
+            'Authorization':'Bearer ${sk-}`,
         },
         body: JSON.stringify({
             model: 'generative',
