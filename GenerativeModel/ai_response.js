@@ -1,4 +1,4 @@
-let model = GenerativeModel(name: "RODA", apiKey: "AIzaSyAvrxOyAVzPVcnzxuD0mjKVDyS2bNWfC10")
+let model = GenerativeModel(name: "lmlm", apiKey: "")
 let cookieImage = UIImage(...)
 let prompt = "build models,train models,compile data,run data,convert websites to app,and perform deeplearning?";
 let response = try await model.generateContent(prompt, cookieImage)
