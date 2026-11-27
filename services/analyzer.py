@@ -24,6 +24,8 @@ def _validate_repository_url(value: str) -> str:
         or parsed.port not in (None, 443)
         or parsed.username
         or parsed.password
+        or parsed.query
+        or parsed.fragment
         or not _GITHUB_REPO_PATH.fullmatch(parsed.path)
     ):
         raise ValueError("Only public GitHub repository URLs are supported.")
@@ -35,21 +37,27 @@ def _read_repository_files(root: Path) -> str:
     total_chars = 0
     count = 0
     excluded_names = {
-        ".env", ".env.local", ".env.production", "secrets.toml",
-        "credentials.json", "google_auth_credentials.py",
+        "secrets.toml", "credentials.json", "google_auth_credentials.py",
+        "id_rsa", "id_ed25519", ".npmrc", ".pypirc",
     }
-    excluded_suffixes = {".pem", ".key", ".p12", ".pfx", ".keystore"}
+    excluded_suffixes = {
+        ".pem", ".key", ".p12", ".pfx", ".keystore", ".credentials",
+        ".secret",
+    }
+    excluded_dirs = {".git", ".ssh", ".aws", "secrets"}
 
     for current, dirs, filenames in os.walk(root, followlinks=False):
         dirs[:] = sorted(
             name for name in dirs
-            if name != ".git" and not (Path(current) / name).is_symlink()
+            if name.lower() not in excluded_dirs
+            and not (Path(current) / name).is_symlink()
         )
         for filename in sorted(filenames):
             path = Path(current) / filename
-            if path.is_symlink() or filename.lower() in excluded_names:
+            lower_name = filename.lower()
+            if path.is_symlink() or lower_name.startswith(".env"):
                 continue
-            if path.suffix.lower() in excluded_suffixes:
+            if lower_name in excluded_names or path.suffix.lower() in excluded_suffixes:
                 continue
             try:
                 if path.stat().st_size > _MAX_FILE_BYTES:
@@ -101,29 +109,29 @@ async def analyze_repo(repository_url: str) -> str:
         if not source.strip():
             raise ValueError("No readable source files were found in the repository.")
 
-        client = AsyncOpenAI(api_key=api_key)
-        response = await client.chat.completions.create(
-            model=os.getenv("KUBUVERSE_OPENAI_MODEL", "gpt-4o-mini"),
-            messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        "You are a senior software engineer. Analyze only the "
-                        "provided repository excerpts. Distinguish verified facts "
-                        "from assumptions, prioritize security and correctness, "
-                        "and never claim to have inspected files not supplied."
-                    ),
-                },
-                {
-                    "role": "user",
-                    "content": (
-                        "Summarize this repository, identify concrete risks, and "
-                        "propose a prioritized repair plan. Do not reproduce "
-                        "credentials or secrets.\n\n" + source
-                    ),
-                },
-            ],
-            temperature=0.2,
-            max_tokens=1200,
-        )
+        async with AsyncOpenAI(api_key=api_key) as client:
+            response = await client.chat.completions.create(
+                model=os.getenv("KUBUVERSE_OPENAI_MODEL", "gpt-4o-mini"),
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are a senior software engineer. Analyze only the "
+                            "provided repository excerpts. Distinguish verified facts "
+                            "from assumptions, prioritize security and correctness, "
+                            "and never claim to have inspected files not supplied."
+                        ),
+                    },
+                    {
+                        "role": "user",
+                        "content": (
+                            "Summarize this repository, identify concrete risks, and "
+                            "propose a prioritized repair plan. Do not reproduce "
+                            "credentials or secrets.\n\n" + source
+                        ),
+                    },
+                ],
+                temperature=0.2,
+                max_tokens=1200,
+            )
         return (response.choices[0].message.content or "").strip()
