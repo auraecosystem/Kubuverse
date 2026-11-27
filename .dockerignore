@@ -1,0 +1,11 @@
+# Keep the backend build context small and exclude all unrelated repo assets.
+**
+!requirements.txt
+!backend/
+!backend/main.py
+!routes/
+!routes/analyze.py
+!routes/chat.py
+!services/
+!services/analyzer.py
+!services/llm_chat.py
